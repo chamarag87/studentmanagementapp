@@ -25,6 +25,7 @@ class _CoursesState extends State<Courses> {
   late TextEditingController _ctrlId;
   late TextEditingController _ctrlName;
   bool isLoading = true;
+  final DatabaseReference _messagesRef = FirebaseDatabase.instance.ref().child('StudentManagement/Courses');
 
   @override
   void initState() {
@@ -32,8 +33,9 @@ class _CoursesState extends State<Courses> {
     super.initState();
     _ctrlId = TextEditingController();
     _ctrlName = TextEditingController();
-
+    // saveMessage();
     loadData();
+
   }
 
   @override
@@ -93,13 +95,25 @@ class _CoursesState extends State<Courses> {
         ),
         actions: [ElevatedButton(onPressed: () {
           setState(() {
-            //_courseItems.add(Course(course_id: _ctrlId.text , course_name: _ctrlName.text));
+            _courseItems.add(Course(course_id: int.parse(_ctrlId.text) , course_name: _ctrlName.text));
+            saveCourse(int.parse(_ctrlId.text), _ctrlName.text);
             Navigator.pop(context);
           });
         }, child: Text('Save'))],
       )
   );
 
+  void saveCourse(id, title) async {
+
+    final objCourse = <String, dynamic> {
+      'Course_ID':id,
+      'Course_Name': title
+    };
+
+    _messagesRef.push().set(objCourse)
+    .then((_)=>print('course add to firebase '))
+    .catchError((error)=> print('error adding course $error'));
+  }
   void loadData() async {
     var url = "https://my-projects-e5de2-default-rtdb.firebaseio.com/" +
         "StudentManagement.json";
@@ -125,4 +139,6 @@ class _CoursesState extends State<Courses> {
       //throw error;
     }
   }
+
+
 }

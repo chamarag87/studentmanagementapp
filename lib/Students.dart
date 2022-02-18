@@ -1,8 +1,10 @@
-import 'dart:convert';
+    import 'dart:convert';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-
+import 'package:firebase_database/firebase_database.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'SelectedStudent.dart';
 import 'models/Student.dart';
 import 'package:http/http.dart' as http;
@@ -15,6 +17,9 @@ class Students extends StatefulWidget {
 }
 
 class _StudentsState extends State<Students> {
+  final _auth = FirebaseAuth.instance;
+
+  final DatabaseReference _messagesRef = FirebaseDatabase.instance.ref().child('StudentManagement/Student');
   List<Student> _studentItems = [];
   //List<Student> _studentItems = [Student(student_mobile: '0776060745', student_gender: 'male', student_name: 'Neo', student_email: 'neo@mail.com', student_id: '11')];
   late TextEditingController _ctrlId;
@@ -120,7 +125,7 @@ class _StudentsState extends State<Students> {
   Future openDialog() => showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Add new batch'),
+        title: Text('Add new Student'),
         content: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
@@ -180,7 +185,7 @@ class _StudentsState extends State<Students> {
                 student_name: _ctrlName.text,
                 student_pwd: _ctrlPwd.text
             ));
-
+            saveStudent(_ctrlEmail.text,_ctrlId.text,_ctrlMobile.text,_ctrlGender.text,_ctrlName.text,_ctrlPwd.text);
             /*if(_ctrlGender.text == 'Male'){
               img = 'assets/images/male.jpg';
             }else{
@@ -191,6 +196,41 @@ class _StudentsState extends State<Students> {
         }, child: Text('Save'))],
       )
   );
+
+
+
+  void saveStudent(email, id, mobile, gender, stdName, pwd) async {
+
+    //adding to auth
+
+  _auth.createUserWithEmailAndPassword(email: email, password: pwd);
+
+  final firebaseUser = (await _auth
+      .createUserWithEmailAndPassword(email: email, password: pwd
+  ).catchError((errorMsg){
+    print('error adding use to auth ' + errorMsg);
+  })).user;
+
+  if(firebaseUser != null){
+    print("========praveen======");
+
+    // print(Course.fromMap(_courseItems));
+    Map objStudent = {
+      'student_batch':id,
+      'student_email': email,
+      'student_gender':gender,
+      'student_mobile': mobile,
+      'student_name': stdName,
+      'student_pwd':pwd
+
+    };
+
+    _messagesRef.child(firebaseUser.uid).set(objStudent);
+    // _messagesRef.push().set(objStudent)
+    //     .then((_)=>print('student add to firebase'))
+    //     .catchError((error)=> print('error adding student $error'));
+  }
+  }
 
   void loadData() async {
     var url = "https://my-projects-e5de2-default-rtdb.firebaseio.com/" +
